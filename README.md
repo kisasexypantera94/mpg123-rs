@@ -6,7 +6,7 @@ An opinionated wrapper for mpg123-sys.
 ## Usage
 ```rust
 let decoder = Decoder::new("assets/a-Ha - Take On Me.mp3").unwrap();
-println!("{:?}", decoder.format);
+println!("{:?}", decoder.format());
 let mut samples = Vec::new();
 
 loop {

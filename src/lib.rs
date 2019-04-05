@@ -12,7 +12,7 @@ use std::sync::Once;
 static INIT: Once = Once::new();
 
 #[derive(Debug)]
-struct Format {
+pub struct Format {
     rate: i64,
     channels: i32,
     encoding: i32,
@@ -28,9 +28,9 @@ impl Default for Format {
     }
 }
 
-struct Decoder {
+pub struct Decoder {
     mh: *mut mpg123::mpg123_handle,
-    pub format: Format,
+    format: Format,
 }
 
 impl Decoder {
@@ -84,6 +84,10 @@ impl Decoder {
         Ok(())
     }
 
+    pub fn format(&self) -> &Format {
+        &self.format
+    }
+
     pub fn read(&self, buf: &mut [u8]) -> Result<(), Error> {
         unsafe {
             let mut done = 0;
@@ -135,29 +139,4 @@ fn init() -> Result<(), Box<StdError>> {
     });
 
     result
-}
-
-#[cfg(test)]
-mod tests {
-    use super::{Decoder, Error};
-
-    #[test]
-    fn test_decode() {
-        let decoder = Decoder::new("assets/a-Ha - Take On Me.mp3").unwrap();
-        println!("{:?}", decoder.format);
-        let mut samples = Vec::new();
-
-        loop {
-            let mut buf = vec![0; 2048];
-            match decoder.read(&mut buf) {
-                Ok(()) => {
-                    for x in buf.into_iter() {
-                        samples.push(x);
-                    }
-                }
-                Err(Error::EOF) => break,
-                Err(e) => panic!(e),
-            }
-        }
-    }
 }
