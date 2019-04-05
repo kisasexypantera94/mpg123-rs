@@ -1,4 +1,6 @@
 # mpg123-rs
+[![Latest Version](https://img.shields.io/crates/v/mpg123.svg)](https://crates.io/crates/mpg123)
+
 
 ## About
 An opinionated wrapper for mpg123-sys.
