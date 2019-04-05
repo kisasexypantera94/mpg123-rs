@@ -18,6 +18,16 @@ struct Format {
     encoding: i32,
 }
 
+impl Default for Format {
+    fn default() -> Format {
+        Format {
+            rate: 0,
+            channels: 0,
+            encoding: 0,
+        }
+    }
+}
+
 struct Decoder {
     mh: *mut mpg123::mpg123_handle,
     pub format: Format,
@@ -34,11 +44,44 @@ impl Decoder {
                 return Err(Box::from("failed to instantiate mpg123"));
             }
 
-            open(mh, filename)?;
-            let format = get_format(mh)?;
-            let decoder = Decoder { mh, format };
+            let mut decoder = Decoder {
+                mh: mh,
+                format: Format::default(),
+            };
+
+            decoder.open(filename)?;
+            decoder.get_format()?;
+
             Ok(decoder)
         }
+    }
+
+    fn open(&self, filename: &str) -> Result<(), Box<StdError>> {
+        let fname = ffi::CString::new(filename)?;
+
+        unsafe {
+            if mpg123::mpg123_open(self.mh, fname.as_ptr()) != mpg123::MPG123_OK as c_int {
+                return Err(Box::from(format!("failed to open `{}`", filename)));
+            }
+        }
+
+        Ok(())
+    }
+
+    fn get_format(&mut self) -> Result<(), Box<StdError>> {
+        unsafe {
+            if mpg123::mpg123_getformat(
+                self.mh,
+                &mut self.format.rate,
+                &mut self.format.channels,
+                &mut self.format.encoding,
+            ) != mpg123::MPG123_OK as c_int
+            {
+                return Err(Box::from("failed to get format"));
+            }
+        }
+
+        Ok(())
     }
 
     pub fn read(&self, buf: &mut [u8]) -> Result<(), Error> {
@@ -75,8 +118,10 @@ impl Decoder {
 
 impl Drop for Decoder {
     fn drop(&mut self) {
-        self.close().unwrap();
-        self.delete();
+        if !self.mh.is_null() {
+            self.close().unwrap_or_else(|e| println!("{}", e));
+            self.delete();
+        }
     }
 }
 
@@ -92,38 +137,6 @@ fn init() -> Result<(), Box<StdError>> {
     result
 }
 
-fn open(mh: *mut mpg123::mpg123_handle, filename: &str) -> Result<(), Box<StdError>> {
-    let fname = ffi::CString::new(filename)?;
-
-    unsafe {
-        if mpg123::mpg123_open(mh, fname.as_ptr()) != mpg123::MPG123_OK as c_int {
-            return Err(Box::from(format!("failed to open `{}`", filename)));
-        }
-    }
-
-    Ok(())
-}
-
-fn get_format(mh: *mut mpg123::mpg123_handle) -> Result<Format, Box<StdError>> {
-    unsafe {
-        let mut rate = 0;
-        let mut channels = 0;
-        let mut encoding = 0;
-        if mpg123::mpg123_getformat(mh, &mut rate, &mut channels, &mut encoding)
-            != mpg123::MPG123_OK as c_int
-        {
-            println!("{},{},{}", rate, channels, encoding);
-            return Err(Box::from("failed to get format"));
-        }
-
-        Ok(Format {
-            rate,
-            channels,
-            encoding,
-        })
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::{Decoder, Error};
@@ -135,7 +148,7 @@ mod tests {
         let mut samples = Vec::new();
 
         loop {
-            let mut buf = vec![0; 1024];
+            let mut buf = vec![0; 2048];
             match decoder.read(&mut buf) {
                 Ok(()) => {
                     for x in buf.into_iter() {
