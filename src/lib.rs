@@ -45,7 +45,7 @@ impl Decoder {
             }
 
             let mut decoder = Decoder {
-                mh: mh,
+                mh,
                 format: Format::default(),
             };
 
@@ -155,10 +155,8 @@ mod tests {
                         samples.push(x);
                     }
                 }
-                Err(e) => match e {
-                    Error::EOF => break,
-                    other => panic!(other),
-                },
+                Err(Error::EOF) => break,
+                Err(e) => panic!(e),
             }
         }
     }

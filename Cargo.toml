@@ -3,6 +3,10 @@ name = "mpg123"
 version = "0.1.0"
 authors = ["kisasexypantera94 <green.grinya@gmail.com>"]
 edition = "2018"
+description = "An opinionated wrapper for mpg123-sys"
+readme = "README.md"
+license = "MIT"
+repository = "https://github.com/kisasexypantera94/mpg123-rs"
 
 [dependencies]
 mpg123-sys = "0.6.0"
