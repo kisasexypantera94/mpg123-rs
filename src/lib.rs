@@ -1,7 +1,7 @@
 mod error;
 
 pub use error::Error;
-use libc::c_int;
+use libc::{c_int, c_long};
 use mpg123_sys as mpg123;
 use std::error::Error as StdError;
 use std::ffi;
@@ -13,9 +13,9 @@ static INIT: Once = Once::new();
 
 #[derive(Debug)]
 pub struct Format {
-    rate: i64,
-    channels: i32,
-    encoding: i32,
+    pub rate: i64,
+    pub channels: i32,
+    pub encoding: i32,
 }
 
 impl Default for Format {
@@ -34,7 +34,7 @@ pub struct Decoder {
 }
 
 impl Decoder {
-    pub fn new(filename: &str) -> Result<Decoder, Box<StdError>> {
+    pub fn new(filename: &str, params: Option<c_long>) -> Result<Decoder, Box<StdError>> {
         unsafe {
             init()?;
 
@@ -42,6 +42,14 @@ impl Decoder {
             let mh = mpg123::mpg123_new(ptr::null(), &mut res);
             if res != mpg123::MPG123_OK as c_int || mh.is_null() {
                 return Err(Box::from("failed to instantiate mpg123"));
+            }
+
+            if let Some(flags) = params {
+                if mpg123::mpg123_param(mh, mpg123::MPG123_FLAGS, flags, 0.)
+                    != mpg123::MPG123_OK as c_int
+                {
+                    return Err(Box::from("failed to set parameters"));
+                }
             }
 
             let mut decoder = Decoder {

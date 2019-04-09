@@ -7,7 +7,7 @@ An opinionated wrapper for mpg123-sys.
 
 ## Usage
 ```rust
-let decoder = Decoder::new("assets/a-Ha - Take On Me.mp3").unwrap();
+let decoder = Decoder::new("assets/a-Ha - Take On Me.mp3", None).unwrap();
 println!("{:?}", decoder.format());
 let mut samples = Vec::new();
 
@@ -24,3 +24,5 @@ loop {
     }
 }
 ```
+
+Other examples can be found [here](https://github.com/kisasexypantera94/mpg123-rs/blob/master/tests/integration_test.rs).
